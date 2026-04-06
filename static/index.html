@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APIReaper — API Pentest Toolkit</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0c0f;--surface:#0f1318;--surface2:#151b24;
+  --border:#1e2a38;--accent:#00ff88;--accent2:#ff4560;
+  --accent3:#ffd060;--accent4:#38bdf8;--text:#c8d8e8;--muted:#4a6070;
+  --font-mono:'Share Tech Mono',monospace;
+  --font-display:'Bebas Neue',sans-serif;
+  --font-body:'DM Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,255,136,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,136,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+.wrap{position:relative;z-index:1;max-width:1160px;margin:0 auto;padding:0 24px 80px;}
+
+/* HEADER */
+header{display:flex;align-items:center;justify-content:space-between;padding:24px 0 18px;border-bottom:1px solid var(--border);margin-bottom:28px;}
+.logo{display:flex;align-items:center;gap:12px;}
+.logo-icon{width:38px;height:38px;background:var(--accent);clip-path:polygon(50% 0%,100% 38%,82% 100%,18% 100%,0% 38%);display:flex;align-items:center;justify-content:center;animation:pulse 3s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.logo-icon svg{width:17px;height:17px;}
+.logo-text{font-family:var(--font-display);font-size:28px;letter-spacing:3px;color:#fff;}
+.logo-sub{font-family:var(--font-mono);font-size:10px;color:var(--accent);letter-spacing:3px;}
+.warn-badge{font-family:var(--font-mono);font-size:10px;color:var(--accent2);border:1px solid var(--accent2);padding:4px 10px;border-radius:2px;animation:pulse 2s ease-in-out infinite;}
+
+/* TABS */
+.tabs{display:flex;gap:0;margin-bottom:24px;border-bottom:1px solid var(--border);}
+.tab{font-family:var(--font-mono);font-size:12px;letter-spacing:1px;padding:10px 22px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all .15s;background:none;border-top:none;border-left:none;border-right:none;}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* INPUT */
+.input-section{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:24px;margin-bottom:20px;}
+.section-label{font-family:var(--font-mono);font-size:11px;color:var(--accent);letter-spacing:2px;margin-bottom:10px;display:block;}
+.url-row{display:flex;gap:10px;margin-bottom:18px;}
+.url-input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:3px;color:var(--text);font-family:var(--font-mono);font-size:14px;padding:12px 14px;outline:none;transition:border-color .2s;}
+.url-input:focus{border-color:var(--accent);}
+.url-input::placeholder{color:var(--muted);}
+.btn{font-family:var(--font-display);font-size:15px;letter-spacing:2px;padding:12px 26px;border:none;border-radius:3px;cursor:pointer;transition:all .15s;}
+.btn-primary{background:var(--accent);color:#000;}
+.btn-primary:hover{background:#00cc6a;transform:translateY(-1px);}
+.btn-primary:disabled{background:#1a3328;color:var(--muted);cursor:not-allowed;transform:none;}
+.btn-danger{background:var(--accent2);color:#fff;}
+.btn-danger:hover{background:#cc2040;}
+.options-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;}
+.opt-group{display:flex;align-items:center;gap:8px;}
+.opt-label{font-family:var(--font-mono);font-size:11px;color:var(--muted);}
+.toggle{appearance:none;width:36px;height:20px;background:var(--border);border-radius:10px;cursor:pointer;position:relative;transition:background .2s;}
+.toggle:checked{background:var(--accent);}
+.toggle::after{content:'';position:absolute;width:14px;height:14px;background:#fff;border-radius:50%;top:3px;left:3px;transition:left .2s;}
+.toggle:checked::after{left:19px;}
+.select-input{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:12px;padding:6px 10px;border-radius:3px;outline:none;}
+.token-input{background:var(--bg);border:1px solid var(--border);border-radius:3px;color:var(--text);font-family:var(--font-mono);font-size:12px;padding:6px 10px;outline:none;width:260px;transition:border-color .2s;}
+.token-input:focus{border-color:var(--accent4);}
+.token-input::placeholder{color:var(--muted);}
+
+/* PROGRESS */
+.progress-section{margin-bottom:20px;display:none;}
+.progress-header{display:flex;justify-content:space-between;margin-bottom:6px;}
+.prog-title{font-family:var(--font-mono);font-size:11px;color:var(--accent);}
+.prog-pct{font-family:var(--font-mono);font-size:11px;color:var(--muted);}
+.prog-bg{background:var(--surface2);border-radius:2px;height:5px;overflow:hidden;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent4));border-radius:2px;transition:width .4s ease;width:0%;}
+.status-line{font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-top:5px;}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:16px;text-align:center;}
+.stat-num{font-family:var(--font-display);font-size:38px;color:var(--accent);line-height:1;}
+.stat-num.red{color:var(--accent2);}
+.stat-num.yellow{color:var(--accent3);}
+.stat-num.blue{color:var(--accent4);}
+.stat-lbl{font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:2px;margin-top:3px;}
+
+/* ACTION ROW */
+.action-row{display:none;gap:10px;flex-wrap:wrap;justify-content:flex-end;margin-bottom:18px;}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--muted);font-family:var(--font-mono);font-size:11px;padding:7px 14px;border-radius:3px;cursor:pointer;transition:all .15s;letter-spacing:1px;}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+.btn-outline.pm{border-color:rgba(56,189,248,.4);color:var(--accent4);}
+.btn-outline.pm:hover{border-color:var(--accent4);background:rgba(56,189,248,.05);}
+
+/* PANELS */
+.panels{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px;}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+.panel-header{background:var(--surface2);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
+.panel-title{font-family:var(--font-mono);font-size:11px;letter-spacing:2px;color:var(--accent);}
+.panel-count{font-family:var(--font-mono);font-size:11px;color:var(--muted);}
+.panel-body{max-height:340px;overflow-y:auto;padding:6px;}
+.panel-body::-webkit-scrollbar{width:3px;}
+.panel-body::-webkit-scrollbar-thumb{background:var(--border);}
+
+/* ENDPOINT ITEMS (scan results) */
+.ep-item{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:3px;margin-bottom:2px;cursor:pointer;transition:background .12s;border-left:2px solid transparent;}
+.ep-item:hover{background:var(--surface2);}
+.ep-item.selected{background:rgba(0,255,136,.05);border-left-color:var(--accent);}
+.method-badge{font-family:var(--font-mono);font-size:10px;font-weight:bold;padding:2px 5px;border-radius:2px;min-width:48px;text-align:center;}
+.GET{background:rgba(56,189,248,.15);color:var(--accent4);}
+.POST{background:rgba(0,255,136,.12);color:var(--accent);}
+.PUT{background:rgba(255,208,96,.12);color:var(--accent3);}
+.DELETE{background:rgba(255,69,96,.12);color:var(--accent2);}
+.PATCH{background:rgba(168,85,247,.12);color:#a855f7;}
+.ep-url{font-family:var(--font-mono);font-size:12px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ep-status{font-family:var(--font-mono);font-size:10px;padding:1px 5px;border-radius:2px;}
+.ep-status.ok{background:rgba(0,255,136,.1);color:var(--accent);}
+.ep-status.warn{background:rgba(255,208,96,.1);color:var(--accent3);}
+.ep-status.err{background:rgba(255,69,96,.1);color:var(--accent2);}
+
+/* VULN ITEMS */
+.vuln-item{padding:9px 11px;border-radius:3px;margin-bottom:5px;border-left:3px solid;background:var(--surface2);cursor:pointer;}
+.vuln-item:hover{opacity:.85;}
+.vuln-item.CRITICAL{border-color:#ff0055;}
+.vuln-item.HIGH{border-color:var(--accent2);}
+.vuln-item.MEDIUM{border-color:var(--accent3);}
+.vuln-item.LOW{border-color:var(--accent4);}
+.vuln-header{display:flex;align-items:center;gap:7px;margin-bottom:3px;}
+.sev-tag{font-family:var(--font-mono);font-size:10px;padding:1px 5px;border-radius:2px;}
+.CRITICAL .sev-tag{background:rgba(255,0,85,.2);color:#ff0055;}
+.HIGH .sev-tag{background:rgba(255,69,96,.2);color:var(--accent2);}
+.MEDIUM .sev-tag{background:rgba(255,208,96,.2);color:var(--accent3);}
+.LOW .sev-tag{background:rgba(56,189,248,.2);color:var(--accent4);}
+.vuln-name{font-size:12px;font-weight:500;color:var(--text);}
+.vuln-ep{font-family:var(--font-mono);font-size:10px;color:var(--muted);}
+.vuln-desc{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.5;}
+
+/* DETAIL PANEL */
+.detail-panel{background:var(--surface);border:1px solid var(--border);border-radius:4px;margin-bottom:20px;display:none;}
+.detail-panel.open{display:block;}
+.detail-header{background:var(--surface2);padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.detail-title{font-family:var(--font-mono);font-size:11px;color:var(--accent);letter-spacing:1px;}
+.close-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;}
+.close-btn:hover{color:var(--text);}
+.detail-body{padding:18px;display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.detail-sec-title{font-family:var(--font-mono);font-size:10px;letter-spacing:2px;color:var(--muted);margin-bottom:6px;}
+.code-block{background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:12px;font-family:var(--font-mono);font-size:11px;color:var(--text);line-height:1.7;white-space:pre-wrap;word-break:break-all;max-height:200px;overflow-y:auto;cursor:pointer;transition:border-color .2s;}
+.code-block:hover{border-color:var(--accent4);}
+.code-block .k{color:var(--accent4);}
+.code-block .v{color:var(--accent3);}
+.code-block .s{color:var(--accent);}
+.code-block .r{color:var(--accent2);}
+
+/* TERMINAL */
+.terminal{background:var(--bg);border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+.terminal-header{background:var(--surface);padding:9px 14px;display:flex;align-items:center;gap:7px;border-bottom:1px solid var(--border);}
+.tdot{width:10px;height:10px;border-radius:50%;}
+.t-title{font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-left:5px;}
+.terminal-body{padding:12px 16px;max-height:200px;overflow-y:auto;font-family:var(--font-mono);font-size:11px;line-height:1.9;}
+.terminal-body::-webkit-scrollbar{width:3px;}
+.terminal-body::-webkit-scrollbar-thumb{background:var(--border);}
+.log-line{display:flex;gap:10px;}
+.log-t{color:var(--muted);min-width:66px;}
+.log-info{color:var(--accent4);}
+.log-warn{color:var(--accent3);}
+.log-error{color:var(--accent2);}
+.log-success{color:var(--accent);}
+.log-critical{color:#ff0055;font-weight:bold;}
+.log-msg{color:var(--text);}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:40px 16px;color:var(--muted);font-family:var(--font-mono);font-size:11px;}
+.empty-icon{font-size:30px;margin-bottom:8px;opacity:.3;}
+
+/* SETUP BANNER */
+.setup-banner{background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.2);border-radius:4px;padding:14px 20px;margin-bottom:20px;}
+.setup-banner h3{font-family:var(--font-mono);font-size:12px;color:var(--accent4);margin-bottom:8px;}
+.setup-banner code{font-family:var(--font-mono);font-size:11px;background:var(--bg);border:1px solid var(--border);padding:2px 7px;border-radius:2px;color:var(--accent3);}
+.setup-banner p{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.6;}
+
+/* ── COLLECTIONS TAB ── */
+.coll-search-row{display:flex;gap:10px;margin-bottom:14px;align-items:center;}
+.coll-search{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:3px;color:var(--text);font-family:var(--font-mono);font-size:12px;padding:9px 12px;outline:none;transition:border-color .2s;}
+.coll-search:focus{border-color:var(--accent);}
+.coll-search::placeholder{color:var(--muted);}
+.coll-stats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.coll-stat{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:5px 12px;font-family:var(--font-mono);font-size:11px;color:var(--muted);}
+.coll-stat b{color:var(--text);}
+.folder{margin-bottom:8px;border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+.folder-hdr{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface2);cursor:pointer;user-select:none;transition:background .12s;}
+.folder-hdr:hover{background:#1a2330;}
+.f-icon{font-size:14px;}
+.f-name{font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--text);flex:1;letter-spacing:.5px;}
+.f-count{font-family:var(--font-mono);font-size:10px;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:2px 8px;}
+.chev{font-size:10px;color:var(--muted);transition:transform .18s;}
+.chev.open{transform:rotate(90deg);}
+.ep-coll-list{display:none;}
+.ep-coll-list.open{display:block;}
+.ep-coll-row{display:flex;align-items:center;gap:9px;padding:8px 14px;border-top:1px solid var(--border);cursor:pointer;transition:background .1s;}
+.ep-coll-row:hover{background:var(--surface2);}
+.ep-coll-row.sel{background:rgba(0,255,136,.04);border-left:2px solid var(--accent);}
+.ep-coll-path{font-family:var(--font-mono);font-size:12px;color:var(--text);flex:1;}
+.ep-coll-src{font-family:var(--font-mono);font-size:10px;color:var(--muted);}
+.ep-detail{display:none;border-top:1px solid var(--border);background:var(--bg);padding:16px;}
+.ep-detail.open{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.ep-detail-single{display:none;border-top:1px solid var(--border);background:var(--bg);padding:16px;}
+.ep-detail-single.open{display:block;}
+.d-label{font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:5px;margin-top:12px;}
+.d-label:first-child{margin-top:0;}
+.curl-box{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:10px 12px;font-family:var(--font-mono);font-size:11px;color:var(--text);white-space:pre-wrap;word-break:break-all;line-height:1.7;cursor:pointer;position:relative;transition:border-color .2s;}
+.curl-box:hover{border-color:var(--accent4);}
+.curl-box::after{content:'click to copy';position:absolute;top:6px;right:8px;font-size:9px;color:var(--muted);opacity:0;transition:opacity .15s;}
+.curl-box:hover::after{opacity:1;}
+.curl-box.copied{border-color:var(--accent)!important;color:var(--accent);}
+.body-box{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:10px 12px;font-family:var(--font-mono);font-size:11px;color:var(--text);white-space:pre-wrap;line-height:1.7;max-height:180px;overflow-y:auto;}
+.sec-box{font-size:12px;color:var(--accent3);background:rgba(255,208,96,.07);border:1px solid rgba(255,208,96,.2);border-radius:3px;padding:8px 12px;line-height:1.6;margin-bottom:0;}
+.badge-sm{font-family:var(--font-mono);font-size:10px;padding:2px 7px;border-radius:3px;font-weight:bold;}
+
+@media(max-width:700px){
+  .panels,.detail-body,.ep-detail{grid-template-columns:1fr;}
+  .stats-row{grid-template-columns:repeat(2,1fr);}
+  .url-row{flex-direction:column;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5">
+        <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-text">APIReaper</div>
+      <div class="logo-sub">REAL API PENTEST TOOLKIT v2.0</div>
+    </div>
+  </div>
+  <div class="warn-badge">⚠ AUTHORIZED TESTING ONLY</div>
+</header>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('scan')">// LIVE SCANNER</button>
+  <button class="tab" onclick="switchTab('collections')">// ENDPOINT COLLECTIONS <span id="collBadge" style="font-family:var(--font-mono);font-size:10px;color:var(--accent);margin-left:4px;"></span></button>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!--  TAB 1: LIVE SCANNER                                   -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div id="tab-scan" class="tab-panel active">
+
+  <div class="setup-banner" id="setupBanner" style="display:none">
+    <h3>// BACKEND NOT CONNECTED</h3>
+    <p>Start the Python backend: <code>pip install -r requirements.txt</code> then <code>python server.py</code> → <code>http://localhost:5000</code></p>
+    <p style="margin-top:4px;color:rgba(56,189,248,.5);">Once running this banner disappears and real scans begin. Use the Endpoint Collections tab without backend.</p>
+  </div>
+  <script>
+    // Inline check — if this page loaded from Flask, backend IS running
+    // Only show banner if page was opened as a file (file://) not via Flask
+    (function(){
+      if(window.location.protocol === 'file:' || window.location.port === '') {
+        document.getElementById('setupBanner').style.display = 'block';
+      }
+      // Also verify /api/ping responds
+      fetch('/api/ping').then(r=>r.json()).then(d=>{
+        if(d.status==='ok') document.getElementById('setupBanner').style.display='none';
+      }).catch(()=>{
+        document.getElementById('setupBanner').style.display='block';
+      });
+    })();
+  </script>
+
+  <div class="input-section">
+    <span class="section-label">// TARGET URL</span>
+    <div class="url-row">
+      <input class="url-input" id="urlInput" type="text" placeholder="http://localhost:3000  or  https://target.com" spellcheck="false"/>
+      <button class="btn btn-primary" id="startBtn" onclick="startScan()">EXECUTE</button>
+      <button class="btn btn-danger" id="stopBtn" onclick="stopScan()" style="display:none">STOP</button>
+    </div>
+    <div class="options-grid">
+      <div class="opt-group">
+        <span class="opt-label">DEPTH</span>
+        <select class="select-input" id="depthSel">
+          <option value="1">1 — Shallow</option>
+          <option value="2" selected>2 — Normal</option>
+          <option value="3">3 — Deep</option>
+        </select>
+      </div>
+      <div class="opt-group"><span class="opt-label">VULN SCAN</span><input type="checkbox" class="toggle" id="vulnToggle" checked/></div>
+      <div class="opt-group"><span class="opt-label">AUTH BYPASS</span><input type="checkbox" class="toggle" id="authToggle" checked/></div>
+      <div class="opt-group"><span class="opt-label">INJECT TESTS</span><input type="checkbox" class="toggle" id="injectToggle" checked/></div>
+      <div class="opt-group"><span class="opt-label">JWT TESTS</span><input type="checkbox" class="toggle" id="jwtToggle" checked/></div>
+      <div class="opt-group" style="grid-column:span 2">
+        <span class="opt-label">AUTH TOKEN</span>
+        <input class="token-input" id="tokenInput" type="password" placeholder="Bearer token for authenticated scan"/>
+      </div>
+    </div>
+  </div>
+
+  <div class="progress-section" id="progSection">
+    <div class="progress-header">
+      <span class="prog-title" id="progTitle">// INITIALIZING</span>
+      <span class="prog-pct" id="progPct">0%</span>
+    </div>
+    <div class="prog-bg"><div class="prog-fill" id="progFill"></div></div>
+    <div class="status-line" id="statusLine">Starting...</div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-num blue" id="sEndpoints">0</div><div class="stat-lbl">ENDPOINTS</div></div>
+    <div class="stat-card"><div class="stat-num red" id="sVulns">0</div><div class="stat-lbl">VULNERABILITIES</div></div>
+    <div class="stat-card"><div class="stat-num" id="sCritical">0</div><div class="stat-lbl">CRITICAL / HIGH</div></div>
+    <div class="stat-card"><div class="stat-num yellow" id="sMedium">0</div><div class="stat-lbl">MEDIUM / LOW</div></div>
+  </div>
+
+  <div class="action-row" id="actionRow">
+    <button class="btn-outline pm" onclick="exportPostman()">📮 POSTMAN COLLECTION</button>
+    <button class="btn-outline pm" onclick="exportCurl()">🖥 CURL SCRIPT</button>
+    <button class="btn-outline" onclick="exportReport('json')">⬇ JSON REPORT</button>
+    <button class="btn-outline" onclick="exportReport('txt')">⬇ TEXT REPORT</button>
+    <button class="btn-outline" onclick="resetUI()">✕ CLEAR</button>
+  </div>
+
+  <div class="detail-panel" id="detailPanel">
+    <div class="detail-header">
+      <span class="detail-title" id="detailTitle">// DETAIL</span>
+      <button class="close-btn" onclick="closeDetail()">×</button>
+    </div>
+    <div class="detail-body" id="detailBody"></div>
+  </div>
+
+  <div class="panels">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">// DISCOVERED ENDPOINTS</span>
+        <span class="panel-count" id="epCount">0 found</span>
+      </div>
+      <div class="panel-body" id="epList">
+        <div class="empty-state"><div class="empty-icon">⬡</div>Run a scan to discover endpoints</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">// VULNERABILITIES</span>
+        <span class="panel-count" id="vulnCount">0 found</span>
+      </div>
+      <div class="panel-body" id="vulnList">
+        <div class="empty-state"><div class="empty-icon">⬡</div>No vulnerabilities yet</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="terminal">
+    <div class="terminal-header">
+      <div class="tdot" style="background:#ff5f57"></div>
+      <div class="tdot" style="background:#ffbd2e"></div>
+      <div class="tdot" style="background:#28c840"></div>
+      <span class="t-title">apireaper.log — live output</span>
+    </div>
+    <div class="terminal-body" id="logBody">
+      <div class="log-line"><span class="log-t">--:--:--</span><span class="log-info">[INFO]  </span><span class="log-msg">APIReaper v2.0 ready. Enter a target URL and click EXECUTE — or browse the Endpoint Collections tab.</span></div>
+    </div>
+  </div>
+
+</div><!-- /tab-scan -->
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!--  TAB 2: ENDPOINT COLLECTIONS                          -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div id="tab-collections" class="tab-panel">
+
+  <div class="coll-search-row">
+    <input class="coll-search" id="collSearch" type="text" placeholder="Filter endpoints... e.g. /admin  or  POST  or  graphql" oninput="renderCollections()"/>
+    <button class="btn-outline" onclick="exportAllCurl()">🖥 EXPORT ALL CURLS</button>
+    <button class="btn-outline pm" onclick="exportAllPostman()">📮 EXPORT POSTMAN</button>
+  </div>
+  <div class="coll-stats" id="collStats"></div>
+  <div id="collList"></div>
+
+</div><!-- /tab-collections -->
+
+</div><!-- /wrap -->
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  ENDPOINT DATABASE  — 62 real-world API endpoints
+// ═══════════════════════════════════════════════════════════
+const ALL_ENDPOINTS = [
+  // 🔐 AUTH
+  {f:"🔐 Authentication",  m:"POST",   p:"/api/v1/auth/login",            body:{email:"user@example.com",password:"Password123!"},                                          note:"Try: no token, expired token, SQL in email: ' OR '1'='1"},
+  {f:"🔐 Authentication",  m:"POST",   p:"/api/v1/auth/register",         body:{name:"John Doe",email:"user@example.com",password:"Password123!",role:"user"},              note:"Mass assignment attack — add role:admin to body"},
+  {f:"🔐 Authentication",  m:"POST",   p:"/api/v1/auth/logout",           body:{refresh_token:"{{refresh_token}}"},                                                          note:"Test with invalid/expired/null token"},
+  {f:"🔐 Authentication",  m:"POST",   p:"/api/v1/auth/refresh",          body:{refresh_token:"{{refresh_token}}"},                                                          note:"Replay attack — reuse old refresh token multiple times"},
+  {f:"🔐 Authentication",  m:"POST",   p:"/api/v1/auth/forgot-password",  body:{email:"user@example.com"},                                                                  note:"No rate limiting? Send 20 rapid requests — brute force"},
+  {f:"🔐 Authentication",  m:"POST",   p:"/api/v1/auth/reset-password",   body:{token:"{{reset_token}}",password:"NewPassword123!"},                                        note:"Reuse reset token after first use — should fail"},
+  {f:"🔐 Authentication",  m:"POST",   p:"/api/v1/auth/verify-otp",       body:{otp:"123456",email:"user@example.com"},                                                     note:"Brute force OTP — 6 digits = 1M combos, try with no rate limit"},
+  {f:"🔐 Authentication",  m:"GET",    p:"/api/v1/auth/me",               body:null,                                                                                        note:"JWT alg:none bypass — forge token with alg set to none"},
+  {f:"🔐 Authentication",  m:"POST",   p:"/api/v2/auth/login",            body:{email:"user@example.com",password:"Password123!"},                                          note:"v2 may have weaker auth rules than v1 — compare responses"},
+
+  // 👤 USERS
+  {f:"👤 Users & Profile", m:"GET",    p:"/api/v1/users",                 body:null,                                                                                        note:"No-auth test — should 401, not return full user list"},
+  {f:"👤 Users & Profile", m:"POST",   p:"/api/v1/users",                 body:{name:"Jane",email:"jane@example.com",password:"Pass123!",role:"user"},                     note:"Mass assignment — add is_admin:true or role:admin"},
+  {f:"👤 Users & Profile", m:"GET",    p:"/api/v1/users/{id}",            body:null,                                                                                        note:"BOLA — change ID to 1,2,3... do you get other users data?"},
+  {f:"👤 Users & Profile", m:"PUT",    p:"/api/v1/users/{id}",            body:{name:"Updated Name",email:"x@x.com"},                                                      note:"BOLA — can you update another user's record by changing ID?"},
+  {f:"👤 Users & Profile", m:"DELETE", p:"/api/v1/users/{id}",            body:null,                                                                                        note:"Can a regular user delete any user by changing the ID?"},
+  {f:"👤 Users & Profile", m:"GET",    p:"/api/v1/profile",               body:null,                                                                                        note:"Check response for password_hash, internal fields, PII"},
+  {f:"👤 Users & Profile", m:"PUT",    p:"/api/v1/profile",               body:{name:"My Name",bio:"Hello",avatar_url:"https://x.com/img.png"},                            note:"Path traversal in avatar_url — try file:///etc/passwd"},
+  {f:"👤 Users & Profile", m:"GET",    p:"/api/v1/me",                    body:null,                                                                                        note:"Same as /profile — check for duplicate endpoint mismatches"},
+  {f:"👤 Users & Profile", m:"POST",   p:"/api/v1/users/{id}/avatar",     body:null,                                                                                        note:"Upload .php or .svg instead of image — check execution"},
+  {f:"👤 Users & Profile", m:"GET",    p:"/api/v2/users",                 body:null,                                                                                        note:"v2 may expose more fields or relaxed auth than v1"},
+
+  // 🛒 PRODUCTS
+  {f:"🛒 Products & Orders",m:"GET",   p:"/api/v1/products",              body:null,                                                                                        note:"Check for hidden cost/wholesale price fields in response"},
+  {f:"🛒 Products & Orders",m:"POST",  p:"/api/v1/products",              body:{name:"Item",description:"Desc",price:9.99,stock:100,category:"electronics"},               note:"Try negative price — does server validate? price:-999"},
+  {f:"🛒 Products & Orders",m:"GET",   p:"/api/v1/products/{id}",         body:null,                                                                                        note:"IDOR — enumerate IDs to find hidden/draft/unreleased products"},
+  {f:"🛒 Products & Orders",m:"PUT",   p:"/api/v1/products/{id}",         body:{price:0.01,stock:99999},                                                                   note:"Modify price or stock of products you don't own"},
+  {f:"🛒 Products & Orders",m:"DELETE",p:"/api/v1/products/{id}",         body:null,                                                                                        note:"Can non-admin delete any product?"},
+  {f:"🛒 Products & Orders",m:"GET",   p:"/api/v1/orders",                body:null,                                                                                        note:"Should only return YOUR orders — test BOLA via user_id param"},
+  {f:"🛒 Products & Orders",m:"POST",  p:"/api/v1/orders",                body:{items:[{product_id:"{{product_id}}",quantity:2}],shipping_address:"123 Main St",payment_method:"card"},note:"quantity:-1 or price:0 — does it create a free order?"},
+  {f:"🛒 Products & Orders",m:"GET",   p:"/api/v1/orders/{id}",           body:null,                                                                                        note:"BOLA — access another user's full order details"},
+  {f:"🛒 Products & Orders",m:"GET",   p:"/api/v2/cart",                  body:null,                                                                                        note:"Check if cart data persists or leaks after logout"},
+  {f:"🛒 Products & Orders",m:"POST",  p:"/api/v2/cart/items",            body:{product_id:"{{product_id}}",quantity:1},                                                   note:"Add item to another user's cart via BOLA"},
+  {f:"🛒 Products & Orders",m:"PUT",   p:"/api/v2/cart/items/{id}",       body:{quantity:0},                                                                               note:"Set quantity to 0 or negative — free item exploit"},
+
+  // 💳 PAYMENTS
+  {f:"💳 Payments & Billing",m:"POST", p:"/api/v1/payments",              body:{amount:99.99,currency:"USD",card_token:"tok_test_123",order_id:"{{order_id}}"},            note:"Try amount:0.001 or negative — does it still process?"},
+  {f:"💳 Payments & Billing",m:"GET",  p:"/api/v1/payments",              body:null,                                                                                        note:"Should only show YOUR payments — check BOLA"},
+  {f:"💳 Payments & Billing",m:"GET",  p:"/api/v1/payments/{id}",         body:null,                                                                                        note:"BOLA — view other users' payment records and card data"},
+  {f:"💳 Payments & Billing",m:"GET",  p:"/api/v1/invoices",              body:null,                                                                                        note:"Check for PII leakage — card numbers, bank account details"},
+  {f:"💳 Payments & Billing",m:"POST", p:"/api/v1/invoices",              body:{customer_id:"{{user_id}}",items:[{description:"Service",amount:49.99}],due_date:"2025-12-31"},note:"Set customer_id to another user's ID"},
+  {f:"💳 Payments & Billing",m:"POST", p:"/api/v1/checkout",              body:{cart_id:"{{cart_id}}",coupon:"DISCOUNT50"},                                                note:"Replay coupon codes, try negative discounts"},
+  {f:"💳 Payments & Billing",m:"POST", p:"/api/v1/refunds",               body:{order_id:"{{order_id}}",amount:99.99,reason:"damaged"},                                   note:"Refund more than original amount — parameter tampering"},
+
+  // 🔧 ADMIN
+  {f:"🔧 Admin",            m:"GET",   p:"/api/admin",                    body:null,                                                                                        note:"BFLA — test with regular user token, should return 403"},
+  {f:"🔧 Admin",            m:"GET",   p:"/api/admin/users",              body:null,                                                                                        note:"Returns all users with regular token? Critical BFLA"},
+  {f:"🔧 Admin",            m:"PUT",   p:"/api/admin/users/{id}",         body:{role:"admin",status:"active",verified:true},                                               note:"Privilege escalation — set your own role to admin"},
+  {f:"🔧 Admin",            m:"DELETE",p:"/api/admin/users/{id}",         body:null,                                                                                        note:"Delete admin user as regular user — account takeover"},
+  {f:"🔧 Admin",            m:"GET",   p:"/api/admin/logs",               body:null,                                                                                        note:"May expose secrets, tokens, stack traces, internal errors"},
+  {f:"🔧 Admin",            m:"GET",   p:"/api/admin/dashboard",          body:null,                                                                                        note:"Business metrics — accessible without admin role?"},
+  {f:"🔧 Admin",            m:"GET",   p:"/api/admin/settings",           body:null,                                                                                        note:"May expose DB connection strings, API keys, feature flags"},
+  {f:"🔧 Admin",            m:"PUT",   p:"/api/admin/settings",           body:{maintenance_mode:false,max_users:9999,feature_flags:{new_ui:true}},                        note:"Modify global settings as non-admin user"},
+  {f:"🔧 Admin",            m:"POST",  p:"/api/admin/impersonate",        body:{user_id:"{{user_id}}"},                                                                    note:"Impersonate any user — critical impact if accessible"},
+
+  // 🔍 SEARCH
+  {f:"🔍 Search & Reports", m:"GET",   p:"/api/search",                   body:null,                                                                                        note:"SQLi: ?q=\' OR \'1\'=\'1   XSS: ?q=<scr\ipt>alert(1)<\/script>"},
+  {f:"🔍 Search & Reports", m:"GET",   p:"/api/v1/search",                body:null,                                                                                        note:"Try UNION SELECT in q param — ?q=1 UNION SELECT NULL,NULL--"},
+  {f:"🔍 Search & Reports", m:"GET",   p:"/api/v1/reports",               body:null,                                                                                        note:"Access other users' reports by changing report_id param"},
+  {f:"🔍 Search & Reports", m:"GET",   p:"/api/v1/export",                body:null,                                                                                        note:"Path traversal: ?format=../../etc/passwd or ?type=../../"},
+  {f:"🔍 Search & Reports", m:"GET",   p:"/api/v1/analytics",             body:null,                                                                                        note:"Exposes business-sensitive aggregate data without auth?"},
+  {f:"🔍 Search & Reports", m:"POST",  p:"/api/v3/batch",                 body:{requests:[{method:"GET",path:"/api/v1/users/1"},{method:"GET",path:"/api/v1/users/2"}]},  note:"Batch bypasses per-endpoint rate limits — abuse freely"},
+  {f:"🔍 Search & Reports", m:"GET",   p:"/api/v1/config",                body:null,                                                                                        note:"May return secret keys, DB URLs, environment variables"},
+
+  // 📁 FILES
+  {f:"📁 Files & Uploads",  m:"POST",  p:"/api/v1/upload",                body:null,                                                                                        note:"Upload .php, .jsp, .svg with payload — check if executed"},
+  {f:"📁 Files & Uploads",  m:"GET",   p:"/api/v1/files",                 body:null,                                                                                        note:"List all files — can you see other users' private files?"},
+  {f:"📁 Files & Uploads",  m:"GET",   p:"/api/v1/files/{id}",            body:null,                                                                                        note:"IDOR — download other users' private documents"},
+  {f:"📁 Files & Uploads",  m:"DELETE",p:"/api/v1/files/{id}",            body:null,                                                                                        note:"Delete files that aren't yours by changing the ID"},
+
+  // 🔔 NOTIFICATIONS
+  {f:"🔔 Notifications & Webhooks",m:"GET",   p:"/api/v1/notifications",  body:null,                                                                                        note:"Read other users' notifications via BOLA on user_id"},
+  {f:"🔔 Notifications & Webhooks",m:"GET",   p:"/api/v1/messages",       body:null,                                                                                        note:"Access another user's DMs by modifying user_id parameter"},
+  {f:"🔔 Notifications & Webhooks",m:"POST",  p:"/api/v1/messages",       body:{recipient_id:"{{user_id}}",content:"Hello!",type:"text"},                                  note:"Send messages as another user — BOLA via sender_id"},
+  {f:"🔔 Notifications & Webhooks",m:"GET",   p:"/api/v1/webhooks",       body:null,                                                                                        note:"Webhook URLs of other users exposed?"},
+  {f:"🔔 Notifications & Webhooks",m:"POST",  p:"/api/v1/webhooks",       body:{url:"http://169.254.169.254/latest/meta-data/iam/security-credentials/",events:["order.created"]},note:"SSRF — AWS metadata URL steals IAM credentials"},
+  {f:"🔔 Notifications & Webhooks",m:"PUT",   p:"/api/v1/webhooks/{id}",  body:{url:"http://internal-service:8080/admin",active:true},                                     note:"SSRF — redirect webhook to internal network services"},
+
+  // 🕸 GRAPHQL
+  {f:"🕸 GraphQL",          m:"POST",  p:"/graphql",                      body:{query:"{__schema{types{name fields{name}}}}"},                                              note:"Introspection enabled = full schema exposed — always test first"},
+  {f:"🕸 GraphQL",          m:"POST",  p:"/api/graphql",                  body:{query:"{users{id email password role}}"},                                                   note:"Query sensitive fields directly — no field-level auth?"},
+  {f:"🕸 GraphQL",          m:"POST",  p:"/graphql",                      body:{query:"mutation{deleteUser(id:1){success}}"},                                               note:"Run mutations without auth — account deletion possible?"},
+
+  // ⚙ SYSTEM
+  {f:"⚙ System & Health",  m:"GET",   p:"/api/health",                   body:null,                                                                                        note:"Exposes version numbers, DB status, dependency list"},
+  {f:"⚙ System & Health",  m:"GET",   p:"/api/status",                   body:null,                                                                                        note:"Stack traces or internal hostnames in error responses"},
+  {f:"⚙ System & Health",  m:"GET",   p:"/swagger.json",                 body:null,                                                                                        note:"Full API spec — imports into Burp Suite and Postman automatically"},
+  {f:"⚙ System & Health",  m:"GET",   p:"/openapi.json",                 body:null,                                                                                        note:"OpenAPI 3.x spec — maps every endpoint and parameter"},
+  {f:"⚙ System & Health",  m:"GET",   p:"/api/docs",                     body:null,                                                                                        note:"Interactive docs — may allow unauthenticated live testing"},
+  {f:"⚙ System & Health",  m:"GET",   p:"/.well-known/openid-configuration",body:null,                                                                                     note:"OIDC config — jwks_uri reveals token signing keys"},
+];
+
+const FOLDER_ORDER = [
+  "🔐 Authentication","👤 Users & Profile","🛒 Products & Orders",
+  "💳 Payments & Billing","🔧 Admin","🔍 Search & Reports",
+  "📁 Files & Uploads","🔔 Notifications & Webhooks","🕸 GraphQL","⚙ System & Health"
+];
+
+// ═══════════════════════════════════════════════════════════
+//  SCANNER STATE
+// ═══════════════════════════════════════════════════════════
+const API_BASE = '';  // relative URLs — works since page is served by Flask itself
+let scanId=null, pollTimer=null;
+let knownEndpoints=new Set(), knownVulns=new Set();
+let allEndpoints=[], allVulns=[], logOffset=0;
+
+async function checkBackend(){
+  try{
+    const r = await fetch('/api/ping');
+    const d = await r.json();
+    if(d.status === 'ok'){
+      document.getElementById('setupBanner').style.display='none';
+      addLog('success', 'Backend connected — APIReaper v2.0 ready');
+    }
+  } catch(e) {
+    document.getElementById('setupBanner').style.display='block';
+    addLog('warn','Backend not detected. Run: python server.py');
+  }
+}
+checkBackend();
+
+// ═══════════════════════════════════════════════════════════
+//  TAB SWITCHING
+// ═══════════════════════════════════════════════════════════
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach((b,i)=>{
+    b.classList.toggle('active', (i===0&&t==='scan')||(i===1&&t==='collections'));
+  });
+  document.getElementById('tab-scan').classList.toggle('active', t==='scan');
+  document.getElementById('tab-collections').classList.toggle('active', t==='collections');
+  if(t==='collections') renderCollections();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SCANNER
+// ═══════════════════════════════════════════════════════════
+async function startScan(){
+  const url=document.getElementById('urlInput').value.trim();
+  if(!url){addLog('error','Target URL required');return;}
+  if(!url.startsWith('http')){addLog('error','URL must start with http:// or https://');return;}
+  resetUI(true);
+  document.getElementById('startBtn').disabled=true;
+  document.getElementById('stopBtn').style.display='';
+  document.getElementById('progSection').style.display='';
+  addLog('info',`Connecting to backend at ${API_BASE}...`);
+  const options={
+    depth:document.getElementById('depthSel').value,
+    vuln_scan:document.getElementById('vulnToggle').checked,
+    auth_test:document.getElementById('authToggle').checked,
+    inject_test:document.getElementById('injectToggle').checked,
+    jwt_test:document.getElementById('jwtToggle').checked,
+    auth_token:document.getElementById('tokenInput').value.trim()||null,
+  };
+  try{
+    const r=await fetch(`${API_BASE}/api/scan/start`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({target:url,options})});
+    if(!r.ok){const e=await r.json();addLog('error',`Start failed: ${e.error}`);finishScanUI();return;}
+    const d=await r.json();
+    scanId=d.scan_id;
+    addLog('success',`Scan started — ID: ${scanId}`);
+    document.getElementById('setupBanner').style.display='none';
+    pollTimer=setInterval(pollStatus,1200);
+  }catch(e){
+    addLog('error',`Cannot reach backend at ${API_BASE}. Is server.py running?`);
+    addLog('info','Run: python server.py');
+    finishScanUI();
+  }
+}
+
+async function stopScan(){
+  if(!scanId)return;
+  try{await fetch(`${API_BASE}/api/scan/${scanId}/stop`,{method:'POST'});}catch{}
+  clearInterval(pollTimer);
+  addLog('warn','Stop signal sent');
+  finishScanUI();
+  document.getElementById('actionRow').style.display='flex';
+}
+
+async function pollStatus(){
+  if(!scanId)return;
+  try{
+    const r=await fetch(`${API_BASE}/api/scan/${scanId}/status`);
+    if(!r.ok)return;
+    const d=await r.json();
+    setProgress(d.progress,d.phase,d.phase);
+    document.getElementById('sEndpoints').textContent=d.endpoints_count;
+    document.getElementById('sVulns').textContent=d.vulns_count;
+    const crit=(d.vulns||[]).filter(v=>['CRITICAL','HIGH'].includes(v.severity)).length;
+    const med=(d.vulns||[]).filter(v=>['MEDIUM','LOW'].includes(v.severity)).length;
+    document.getElementById('sCritical').textContent=crit;
+    document.getElementById('sMedium').textContent=med;
+    (d.endpoints||[]).forEach(ep=>{const k=`${ep.method}:${ep.path}`;if(!knownEndpoints.has(k)){knownEndpoints.add(k);allEndpoints.push(ep);}});
+    renderScanEndpoints();
+    (d.vulns||[]).forEach(v=>{const k=`${v.id}:${v.endpoint}`;if(!knownVulns.has(k)){knownVulns.add(k);allVulns.push(v);}});
+    renderVulns();
+    const logs=d.logs||[];
+    logs.slice(logOffset).forEach(l=>addLog(l.level,l.msg,l.time));
+    logOffset=logs.length;
+    if(['complete','error','stopped'].includes(d.status)){
+      clearInterval(pollTimer);
+      finishScanUI();
+      document.getElementById('actionRow').style.display='flex';
+    }
+  }catch(e){addLog('error',`Poll error: ${e.message}`);}
+}
+
+function finishScanUI(){
+  document.getElementById('startBtn').disabled=false;
+  document.getElementById('stopBtn').style.display='none';
+}
+
+function renderScanEndpoints(){
+  const el=document.getElementById('epList');
+  document.getElementById('epCount').textContent=`${allEndpoints.length} found`;
+  if(!allEndpoints.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">⬡</div>No endpoints yet</div>';return;}
+  el.innerHTML=allEndpoints.map((ep,i)=>{
+    const s=ep.status;const sc=s<300?'ok':s<400?'warn':'err';
+    return `<div class="ep-item" onclick="showScanEpDetail(${i})">
+      <span class="method-badge ${ep.method}">${ep.method}</span>
+      <span class="ep-url">${ep.path}</span>
+      ${s?`<span class="ep-status ${sc}">${s}</span>`:''}
+    </div>`;
+  }).join('');
+  el.scrollTop=el.scrollHeight;
+}
+
+function renderVulns(){
+  const el=document.getElementById('vulnList');
+  document.getElementById('vulnCount').textContent=`${allVulns.length} found`;
+  if(!allVulns.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">⬡</div>No vulnerabilities yet</div>';return;}
+  const order=['CRITICAL','HIGH','MEDIUM','LOW','INFO'];
+  const sorted=[...allVulns].sort((a,b)=>order.indexOf(a.severity)-order.indexOf(b.severity));
+  el.innerHTML=sorted.map((v,i)=>`
+    <div class="vuln-item ${v.severity}" onclick="showVulnDetail(${allVulns.indexOf(v)})">
+      <div class="vuln-header"><span class="sev-tag">${v.severity}</span><span class="vuln-name">${v.name}</span></div>
+      <div class="vuln-ep">${v.method} ${v.endpoint}</div>
+      <div class="vuln-desc">${v.description.substring(0,85)}...</div>
+    </div>`).join('');
+}
+
+async function showScanEpDetail(i){
+  const ep=allEndpoints[i];
+  document.getElementById('detailTitle').textContent=`// ENDPOINT: ${ep.method} ${ep.path}`;
+  document.getElementById('detailBody').innerHTML=`
+    <div>
+      <div class="detail-sec-title">ENDPOINT INFO</div>
+      <div class="code-block"><span class="k">Method:</span> <span class="v">${ep.method}</span>
+<span class="k">Path:</span>   <span class="s">${ep.path}</span>
+<span class="k">URL:</span>    <span class="s">${ep.url||ep.path}</span>
+<span class="k">Source:</span> <span class="v">${ep.source}</span>
+<span class="k">Status:</span> <span class="v">${ep.status||'?'}</span>${ep.extra&&ep.extra.note?`\n\n<span class="r">NOTE: ${ep.extra.note}</span>`:''}</div>
+    </div>
+    <div id="curlDetailBox">
+      <div class="detail-sec-title">CURL COMMAND</div>
+      <div class="code-block" style="color:var(--muted)">Loading curl...</div>
+    </div>`;
+  document.getElementById('detailPanel').className='detail-panel open';
+  document.getElementById('detailPanel').scrollIntoView({behavior:'smooth',block:'nearest'});
+  if(scanId){
+    try{
+      const r=await fetch(`${API_BASE}/api/scan/${scanId}/endpoint/${i}/curl`);
+      if(r.ok){
+        const d=await r.json();
+        const box=document.getElementById('curlDetailBox');
+        let h=`<div class="detail-sec-title">CURL COMMAND — click to copy</div>
+          <div class="code-block" onclick="copyText(this,'${i}')" title="Click to copy">${esc(d.curl)}</div>`;
+        if(d.sample_body) h+=`<div class="detail-sec-title" style="margin-top:12px">SAMPLE BODY</div><div class="code-block">${esc(JSON.stringify(d.sample_body,null,2))}</div>`;
+        box.innerHTML=h;
+      }
+    }catch{}
+  }
+}
+
+function showVulnDetail(i){
+  const v=allVulns[i];
+  document.getElementById('detailTitle').textContent=`// VULN: [${v.severity}] ${v.id}`;
+  document.getElementById('detailBody').innerHTML=`
+    <div>
+      <div class="detail-sec-title">PROOF OF CONCEPT</div>
+      <div class="code-block" onclick="copyText(this)">${esc(v.poc_request)}</div>
+      <div class="detail-sec-title" style="margin-top:12px">EVIDENCE</div>
+      <div class="code-block">${esc(String(v.evidence||'').substring(0,400))}</div>
+    </div>
+    <div>
+      <div class="detail-sec-title">VULNERABILITY DETAILS</div>
+      <div class="code-block"><span class="k">Name:</span>     <span class="v">${esc(v.name)}</span>
+<span class="k">Severity:</span> <span class="r">${v.severity}</span>
+<span class="k">CVSS:</span>     <span class="v">${v.cvss}</span>
+<span class="k">CWE:</span>      <span class="s">${v.cwe}</span>
+<span class="k">Endpoint:</span> <span class="s">${v.method} ${v.endpoint}</span>
+
+<span class="k">Description:</span>
+${esc(v.description)}
+
+<span class="k">Remediation:</span>
+<span class="s">${esc(v.remediation)}</span></div>
+    </div>`;
+  document.getElementById('detailPanel').className='detail-panel open';
+  document.getElementById('detailPanel').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function closeDetail(){document.getElementById('detailPanel').className='detail-panel';}
+
+function setProgress(pct,title,status){
+  document.getElementById('progFill').style.width=pct+'%';
+  document.getElementById('progPct').textContent=pct+'%';
+  document.getElementById('progTitle').textContent=title;
+  document.getElementById('statusLine').textContent=status;
+}
+
+function addLog(level,msg,ts){
+  const body=document.getElementById('logBody');
+  const now=ts||new Date().toTimeString().slice(0,8);
+  const cls={info:'log-info',warn:'log-warn',error:'log-error',success:'log-success',critical:'log-critical'}[level]||'log-info';
+  const lbl={info:'[INFO]  ',warn:'[WARN]  ',error:'[ERROR] ',success:'[DONE]  ',critical:'[CRIT!] '}[level]||'[INFO]  ';
+  const d=document.createElement('div');
+  d.className='log-line';
+  d.innerHTML=`<span class="log-t">${now}</span><span class="${cls}">${lbl}</span><span class="log-msg">${esc(msg)}</span>`;
+  body.appendChild(d);
+  body.scrollTop=body.scrollHeight;
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function copyText(el){
+  navigator.clipboard.writeText(el.innerText).then(()=>{
+    const ob=el.style.borderColor,oc=el.style.color;
+    el.style.borderColor='var(--accent)';el.style.color='var(--accent)';
+    setTimeout(()=>{el.style.borderColor=ob;el.style.color=oc;},900);
+    addLog('success','Copied to clipboard');
+  });
+}
+
+async function exportReport(fmt){
+  if(!scanId){addLog('warn','No scan to export');return;}
+  try{const r=await fetch(`${API_BASE}/api/scan/${scanId}/report?format=${fmt}`);const b=await r.blob();dl(b,`apireaper_${scanId}.${fmt}`);}
+  catch{addLog('error','Export failed — is backend running?');}
+}
+async function exportPostman(){
+  if(!scanId){addLog('warn','No scan to export');return;}
+  addLog('info','Generating Postman collection...');
+  try{const r=await fetch(`${API_BASE}/api/scan/${scanId}/postman`);if(!r.ok){const e=await r.json();addLog('error',e.error);return;}const b=await r.blob();dl(b,`apireaper_${scanId}_postman.json`);addLog('success','Postman collection downloaded — Postman → Import → Upload File');}
+  catch{addLog('error','Export failed — is backend running?');}
+}
+async function exportCurl(){
+  if(!scanId){addLog('warn','No scan to export');return;}
+  addLog('info','Generating curl script...');
+  try{const r=await fetch(`${API_BASE}/api/scan/${scanId}/curl`);if(!r.ok){const e=await r.json();addLog('error',e.error);return;}const b=await r.blob();dl(b,`apireaper_${scanId}_curls.sh`);addLog('success','curl script downloaded — chmod +x curls.sh && ./curls.sh');}
+  catch{addLog('error','Export failed — is backend running?');}
+}
+function dl(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();}
+
+function resetUI(keepInput){
+  clearInterval(pollTimer);
+  scanId=null;knownEndpoints.clear();knownVulns.clear();
+  allEndpoints=[];allVulns=[];logOffset=0;
+  ['sEndpoints','sVulns','sCritical','sMedium'].forEach(id=>document.getElementById(id).textContent='0');
+  document.getElementById('epCount').textContent='0 found';
+  document.getElementById('vulnCount').textContent='0 found';
+  renderScanEndpoints();renderVulns();
+  document.getElementById('logBody').innerHTML='<div class="log-line"><span class="log-t">--:--:--</span><span class="log-info">[INFO]  </span><span class="log-msg">Cleared. Ready for new scan.</span></div>';
+  document.getElementById('progSection').style.display='none';
+  document.getElementById('actionRow').style.display='none';
+  document.getElementById('detailPanel').className='detail-panel';
+  if(!keepInput) document.getElementById('urlInput').value='';
+  finishScanUI();
+}
+
+document.getElementById('urlInput').addEventListener('keydown',e=>{if(e.key==='Enter')startScan();});
+
+// ═══════════════════════════════════════════════════════════
+//  COLLECTIONS TAB
+// ═══════════════════════════════════════════════════════════
+let openFolders=new Set(['🔐 Authentication']);
+let openEpIdx=null;
+
+// Update badge on tab
+document.getElementById('collBadge').textContent=`(${ALL_ENDPOINTS.length})`;
+
+function buildCurl(ep, baseUrl){
+  const base = baseUrl || 'https://your-target.com';
+  let c=`curl -X ${ep.m} "${base}${ep.p}"`;
+  c+=`\n  -H "Content-Type: application/json"`;
+  c+=`\n  -H "Authorization: Bearer YOUR_TOKEN_HERE"`;
+  if(ep.body&&ep.m!=='GET') c+=`\n  -d '${JSON.stringify(ep.body)}'`;
+  c+=`\n  -v`;
+  return c;
+}
+
+function renderCollections(){
+  const q=document.getElementById('collSearch').value.toLowerCase();
+  const filtered=q?ALL_ENDPOINTS.filter(e=>e.p.toLowerCase().includes(q)||e.m.toLowerCase().includes(q)||e.f.toLowerCase().includes(q)||e.note.toLowerCase().includes(q)):ALL_ENDPOINTS;
+
+  // Stats
+  const totals={};filtered.forEach(e=>{totals[e.m]=(totals[e.m]||0)+1;});
+  document.getElementById('collStats').innerHTML=
+    `<div class="coll-stat">Total <b>${filtered.length}</b></div>`+
+    Object.entries(totals).sort().map(([m,c])=>`<div class="coll-stat"><b>${c}</b> ${m}</div>`).join('')+
+    `<div class="coll-stat"><b>${FOLDER_ORDER.length}</b> collections</div>`;
+
+  const grouped={};
+  FOLDER_ORDER.forEach(f=>{grouped[f]=[];});
+  filtered.forEach(e=>{if(grouped[e.f])grouped[e.f].push(e);});
+
+  const container=document.getElementById('collList');
+  container.innerHTML='';
+
+  FOLDER_ORDER.forEach(fname=>{
+    const eps=grouped[fname];
+    if(!eps||!eps.length) return;
+    const isOpen=openFolders.has(fname);
+    const div=document.createElement('div');
+    div.className='folder';
+    const safeId=fname.replace(/[^a-z0-9]/gi,'_');
+
+    div.innerHTML=`
+      <div class="folder-hdr" onclick="toggleFolder('${fname}','${safeId}')">
+        <span class="f-icon">${fname.split(' ')[0]}</span>
+        <span class="f-name">${fname.split(' ').slice(1).join(' ')}</span>
+        <span class="f-count">${eps.length} endpoints</span>
+        <span class="chev ${isOpen?'open':''}" id="chev_${safeId}">▶</span>
+      </div>
+      <div class="ep-coll-list ${isOpen?'open':''}" id="fl_${safeId}">
+        ${eps.map(ep=>{
+          const gi=ALL_ENDPOINTS.indexOf(ep);
+          return `<div class="ep-coll-row" id="ecr_${gi}" onclick="toggleCollEp(${gi},'${safeId}')">
+            <span class="method-badge ${ep.m}">${ep.m}</span>
+            <span class="ep-coll-path">${ep.p}</span>
+          </div>
+          <div class="ep-detail" id="ecd_${gi}">
+            <div>
+              <div class="d-label">PENTEST NOTE</div>
+              <div class="sec-box">${ep.note}</div>
+              <div class="d-label" style="margin-top:12px">CURL COMMAND — click to copy</div>
+              <div class="curl-box" id="curl_${gi}" onclick="copyCurlBox(${gi})">${buildCurl(ep, document.getElementById('urlInput').value||'https://your-target.com')}</div>
+            </div>
+            <div>
+              ${ep.body?`<div class="d-label">SAMPLE REQUEST BODY</div><div class="body-box">${esc(JSON.stringify(ep.body,null,2))}</div>`:'<div class="d-label">SAMPLE BODY</div><div class="body-box" style="color:var(--muted)">No body — GET request</div>'}
+              <div class="d-label" style="margin-top:12px">POSTMAN REQUEST INFO</div>
+              <div class="body-box"><span style="color:var(--accent4)">Method:</span>  ${ep.m}
+<span style="color:var(--accent4)">Path:</span>    ${ep.p}
+<span style="color:var(--accent4)">Auth:</span>    Bearer {{auth_token}}
+<span style="color:var(--accent4)">Folder:</span>  ${ep.f}
+<span style="color:var(--accent4)">Content:</span> application/json</div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`;
+    container.appendChild(div);
+  });
+}
+
+function toggleFolder(fname,safeId){
+  if(openFolders.has(fname)) openFolders.delete(fname);
+  else openFolders.add(fname);
+  const list=document.getElementById('fl_'+safeId);
+  const chev=document.getElementById('chev_'+safeId);
+  if(list) list.classList.toggle('open',openFolders.has(fname));
+  if(chev) chev.classList.toggle('open',openFolders.has(fname));
+}
+
+function toggleCollEp(gi,safeId){
+  const det=document.getElementById('ecd_'+gi);
+  const row=document.getElementById('ecr_'+gi);
+  if(!det) return;
+  const isOpen=det.style.display==='grid';
+  // Close previous
+  if(openEpIdx!==null&&openEpIdx!==gi){
+    const od=document.getElementById('ecd_'+openEpIdx);
+    const or=document.getElementById('ecr_'+openEpIdx);
+    if(od){od.style.display='none';}
+    if(or) or.classList.remove('sel');
+  }
+  if(isOpen){det.style.display='none';row.classList.remove('sel');openEpIdx=null;}
+  else{det.style.display='grid';row.classList.add('sel');openEpIdx=gi;}
+}
+
+function copyCurlBox(gi){
+  const ep=ALL_ENDPOINTS[gi];
+  const base=document.getElementById('urlInput').value||'https://your-target.com';
+  const text=buildCurl(ep,base);
+  navigator.clipboard.writeText(text).then(()=>{
+    const el=document.getElementById('curl_'+gi);
+    if(el){el.classList.add('copied');setTimeout(()=>el.classList.remove('copied'),900);}
+  });
+}
+
+function exportAllCurl(){
+  const base=document.getElementById('urlInput').value||'https://your-target.com';
+  let script=`#!/bin/bash\n# APIReaper — Full cURL Collection\n# Target: ${base}\n# Generated: ${new Date().toISOString()}\n# ⚠ FOR AUTHORIZED TESTING ONLY\n\nBASE_URL="${base}"\nTOKEN="YOUR_JWT_TOKEN_HERE"\n\n`;
+  let lastFolder='';
+  ALL_ENDPOINTS.forEach(ep=>{
+    if(ep.f!==lastFolder){script+=`\n# ${'='.repeat(55)}\n# ${ep.f}\n# ${'='.repeat(55)}\n\n`;lastFolder=ep.f;}
+    script+=`# PENTEST: ${ep.note}\n`;
+    script+=buildCurl(ep,'$BASE_URL').replace('YOUR_TOKEN_HERE','$TOKEN')+'\n\n';
+  });
+  const blob=new Blob([script],{type:'text/plain'});
+  dl(blob,'apireaper_all_endpoints_curl.sh');
+}
+
+function exportAllPostman(){
+  const base=document.getElementById('urlInput').value||'https://your-target.com';
+  const folders={};
+  FOLDER_ORDER.forEach(f=>{folders[f]=[];});
+  ALL_ENDPOINTS.forEach(ep=>{
+    if(folders[ep.f]){
+      folders[ep.f].push({
+        name:`${ep.m} ${ep.p}`,
+        request:{
+          method:ep.m,
+          header:[{key:"Content-Type",value:"application/json"},{key:"Accept",value:"application/json"}],
+          auth:{type:"bearer",bearer:[{key:"token",value:"{{auth_token}}",type:"string"}]},
+          body:ep.body?{mode:"raw",raw:JSON.stringify(ep.body,null,2),options:{raw:{language:"json"}}}:{mode:"none"},
+          url:{raw:`{{base_url}}${ep.p}`,host:["{{base_url}}"],path:ep.p.replace(/^\//,'').split('/')},
+          description:`**Pentest Note:** ${ep.note}\n\n**curl:**\n\`\`\`bash\n${buildCurl(ep,base)}\n\`\`\``
+        },
+        response:[]
+      });
+    }
+  });
+  const collection={
+    info:{_postman_id:crypto.randomUUID(),name:`APIReaper — API Endpoint Collection`,description:`Generated by APIReaper v2.0\nTarget: ${base}\nDate: ${new Date().toISOString()}\n⚠ FOR AUTHORIZED TESTING ONLY\n\nHOW TO USE:\n1. Import into Postman\n2. Set auth_token in Collection Variables\n3. Run Login first to auto-save token`,schema:"https://schema.getpostman.com/json/collection/v2.1.0/collection.json"},
+    auth:{type:"bearer",bearer:[{key:"token",value:"{{auth_token}}",type:"string"}]},
+    variable:[
+      {key:"base_url",value:base,type:"string"},
+      {key:"auth_token",value:"",type:"string"},
+      {key:"refresh_token",value:"",type:"string"},
+      {key:"user_id",value:"1",type:"string"},
+      {key:"product_id",value:"1",type:"string"},
+      {key:"order_id",value:"1",type:"string"},
+    ],
+    item:FOLDER_ORDER.filter(f=>folders[f].length>0).map(f=>({name:f,item:folders[f]}))
+  };
+  const blob=new Blob([JSON.stringify(collection,null,2)],{type:'application/json'});
+  dl(blob,'apireaper_all_endpoints_postman.json');
+}
+
+// Initial render
+renderCollections();
+</script>
+</body>
+</html>
